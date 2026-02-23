@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>John's Pizza</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ─── DESIGN TOKENS ────────────────────────────────────────────── */
+:root {
+  --ink:       #18120a;
+  --ink2:      #221a0f;
+  --ink3:      #2e2218;
+  --ember:     #c8751a;
+  --ember2:    #e8973a;
+  --gold:      #d4a84b;
+  --gold-soft: rgba(212,168,75,0.18);
+  --gold-glow: rgba(212,168,75,0.08);
+  --cream:     #f5ead6;
+  --cream2:    #ede0c4;
+  --text:      #f0e6d0;
+  --text-dim:  rgba(240,230,208,0.5);
+  --text-faint:rgba(240,230,208,0.25);
+  --border:    rgba(212,168,75,0.18);
+  --r-sm:  10px;
+  --r-md:  18px;
+  --r-lg:  26px;
+  --r-xl:  36px;
+  --r-pill:999px;
+}
+
+/* ─── RESET & BASE ─────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  font-family:'Outfit', sans-serif;
+  background: var(--ink);
+  color: var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  /* grain texture overlay */
+  position:relative;
+}
+
+/* grain */
+body::after {
+  content:'';
+  position:fixed; inset:0; z-index:0;
+  pointer-events:none;
+  opacity:0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+
+/* everything above grain */
+.hero, .tabs-wrap, #sectionsContainer, .cart-bar, #slipOverlay, #loadingScreen {
+  position:relative; z-index:1;
+}
+
+/* ─── LOADING ───────────────────────────────────────────────────── */
+#loadingScreen {
+  position:fixed; inset:0;
+  background:var(--ink);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:20px;
+  z-index:9999; transition:opacity 0.7s ease;
+}
+#loadingScreen.hidden { opacity:0; pointer-events:none; }
+
+.load-logo {
+  font-family:'DM Serif Display', serif; font-style:italic;
+  font-size: clamp(2.8rem, 10vw, 5rem);
+  background: linear-gradient(135deg, var(--ember2) 0%, var(--gold) 60%, var(--ember) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.01em;
+}
+.load-sub {
+  font-size:0.6rem; letter-spacing:0.4em;
+  text-transform:uppercase; color:var(--text-dim);
+}
+.load-bar-wrap {
+  width:120px; height:1px;
+  background:var(--text-faint); overflow:hidden;
+  border-radius:var(--r-pill);
+}
+.load-bar {
+  height:100%; width:0; background:var(--gold);
+  border-radius:var(--r-pill);
+  animation: loadbar 1.2s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes loadbar { to { width:100%; } }
+
+/* ─── HERO ──────────────────────────────────────────────────────── */
+.hero {
+  background: radial-gradient(ellipse at 60% 0%, #2e1c08 0%, var(--ink2) 55%, var(--ink) 100%);
+  padding: 36px 20px 30px;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+
+/* ambient ember glow top */
+.hero::before {
+  content:'';
+  position:absolute; top:-80px; left:50%; transform:translateX(-50%);
+  width:400px; height:200px;
+  background: radial-gradient(ellipse, rgba(200,117,26,0.18) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.lang-switcher {
+  position:absolute; top:18px; right:18px;
+  display:flex; gap:6px; z-index:10;
+}
+.lang-btn {
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);
+  color:var(--text-dim);
+  border-radius:var(--r-pill);
+  padding:5px 12px;
+  font-family:'Outfit',sans-serif;
+  font-size:0.65rem; font-weight:500; letter-spacing:0.1em;
+  text-transform:uppercase; cursor:pointer;
+  transition:all 0.25s;
+  backdrop-filter:blur(8px);
+}
+.lang-btn.active {
+  background:var(--gold); border-color:var(--gold);
+  color:var(--ink); font-weight:600;
+}
+.lang-btn:hover:not(.active) {
+  border-color:rgba(212,168,75,0.5); color:var(--text);
+}
+
+.hero-eyebrow {
+  font-size:0.58rem; letter-spacing:0.45em;
+  text-transform:uppercase; color:var(--ember2);
+  opacity:0.85; margin-bottom:10px;
+}
+.hero-logo {
+  font-family:'DM Serif Display', serif; font-style:italic;
+  font-size: clamp(3rem, 11vw, 5.5rem);
+  background: linear-gradient(135deg, var(--ember2) 0%, var(--gold) 55%, #f0c870 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1; letter-spacing:-0.02em;
+  filter: drop-shadow(0 0 40px rgba(212,168,75,0.25));
+}
+.hero-tagline {
+  font-size:0.62rem; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--text-dim);
+  margin-top:10px;
+}
+
+/* ornament */
+.ornament {
+  display:flex; align-items:center; justify-content:center;
+  gap:14px; margin:16px 0 0;
+}
+.ornament-line {
+  width:36px; height:1px;
+  background:linear-gradient(to right, transparent, var(--gold));
+  opacity:0.4;
+}
+.ornament-line.right {
+  background:linear-gradient(to left, transparent, var(--gold));
+}
+.ornament-dot {
+  width:4px; height:4px; border-radius:50%;
+  background:var(--gold); opacity:0.6;
+  box-shadow:0 0 6px var(--gold);
+}
+
+/* ─── TABS ──────────────────────────────────────────────────────── */
+.tabs-wrap {
+  position:sticky; top:0; z-index:100;
+  background: rgba(22,15,7,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.tabs {
+  display:flex; overflow-x:auto; scrollbar-width:none;
+  padding:0 8px;
+  gap:2px;
+}
+.tabs::-webkit-scrollbar { display:none; }
+
+.tab {
+  flex:0 0 auto;
+  padding:15px 16px;
+  font-family:'Outfit',sans-serif;
+  font-size:0.7rem; font-weight:400; letter-spacing:0.12em;
+  text-transform:uppercase; cursor:pointer;
+  border:none; background:none; color:var(--text-dim);
+  border-bottom:2px solid transparent;
+  transition:all 0.25s; white-space:nowrap;
+  position:relative;
+}
+.tab::after {
+  content:''; position:absolute; bottom:-1px; left:50%; right:50%;
+  height:2px; background:var(--ember2);
+  transition:left 0.3s ease, right 0.3s ease;
+  border-radius:var(--r-pill);
+}
+.tab.active::after { left:12%; right:12%; }
+.tab.active { color:var(--ember2); }
+.tab:hover:not(.active) { color:rgba(240,230,208,0.75); }
+
+/* ─── SECTION ───────────────────────────────────────────────────── */
+.section { display:none; padding:28px 14px 130px; }
+.section.active { display:block; }
+
+.section-header { margin-bottom:24px; padding-left:2px; }
+.section-eyebrow {
+  font-size:0.58rem; letter-spacing:0.4em;
+  text-transform:uppercase; color:var(--ember2);
+  opacity:0.8; margin-bottom:8px;
+}
+.section-title {
+  font-family:'Fraunces', serif; font-style:italic;
+  font-size:clamp(2rem, 6vw, 2.8rem);
+  font-weight:300; color:var(--cream);
+  line-height:1.1; letter-spacing:-0.01em;
+}
+.section-sub {
+  font-size:0.72rem; color:var(--text-dim);
+  margin-top:6px; letter-spacing:0.04em;
+}
+
+/* ─── GRID ──────────────────────────────────────────────────────── */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
+  gap:14px;
+}
+
+/* ─── CARD ──────────────────────────────────────────────────────── */
+.card {
+  background:var(--ink2);
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  border:1px solid rgba(212,168,75,0.1);
+  cursor:pointer;
+  transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s;
+  display:flex; flex-direction:column;
+  position:relative;
+}
+.card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 16px 48px rgba(0,0,0,0.5), 0 0 30px rgba(200,117,26,0.1);
+  border-color:rgba(212,168,75,0.28);
+}
+.card:active { transform:scale(0.97) translateY(0); }
+
+.card-img-wrap { position:relative; overflow:hidden; }
+.card img {
+  width:100%; height:145px; object-fit:cover; display:block;
+  transition:transform 0.5s ease;
+  filter:brightness(0.82) saturate(0.85);
+}
+.card:hover img { transform:scale(1.06); filter:brightness(0.92) saturate(1); }
+.card-img-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(to top, rgba(24,18,10,0.7) 0%, rgba(24,18,10,0.1) 50%, transparent 100%);
+}
+
+.badge {
+  position:absolute; top:12px; left:12px; z-index:2;
+  background:var(--ember);
+  color:var(--ink);
+  font-family:'Outfit',sans-serif;
+  font-size:0.58rem; font-weight:600; letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:var(--r-pill);
+}
+
+.card-body {
+  padding:14px 15px 16px;
+  flex:1; display:flex; flex-direction:column;
+}
+.card-name {
+  font-family:'Fraunces', serif; font-style:italic;
+  font-size:1.15rem; font-weight:300;
+  color:var(--cream); line-height:1.2;
+}
+.card-desc {
+  font-size:0.68rem; color:var(--text-dim);
+  margin-top:5px; line-height:1.55; flex:1;
+}
+.card-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:12px; padding-top:11px;
+  border-top:1px solid rgba(255,255,255,0.07);
+}
+.price {
+  font-family:'Fraunces', serif;
+  font-size:1.2rem; font-weight:300;
+  color:var(--gold); letter-spacing:0.02em;
+}
+.add-btn {
+  width:33px; height:33px;
+  border-radius:var(--r-pill);
+  background:linear-gradient(135deg, var(--ember) 0%, var(--ember2) 100%);
+  color:white; border:none;
+  font-size:1.35rem; font-weight:300;
+  cursor:pointer; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 14px rgba(200,117,26,0.4);
+  transition:all 0.2s ease; flex-shrink:0;
+}
+.add-btn:hover { transform:scale(1.1); box-shadow:0 6px 20px rgba(200,117,26,0.55); }
+.add-btn:active { transform:scale(0.92); }
+
+/* ─── CART BAR ──────────────────────────────────────────────────── */
+.cart-bar {
+  position:fixed; bottom:22px; left:50%;
+  transform:translateX(-50%);
+  background:linear-gradient(135deg, var(--ink2) 0%, #251a0e 100%);
+  border:1px solid rgba(212,168,75,0.35);
+  border-radius:var(--r-pill);
+  color:var(--text);
+  padding:14px 24px 14px 18px;
+  display:flex; align-items:center; gap:14px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(200,117,26,0.12);
+  cursor:pointer;
+  transition:opacity 0.35s, transform 0.35s, box-shadow 0.25s;
+  opacity:0; pointer-events:none;
+  z-index:200; white-space:nowrap;
+  backdrop-filter:blur(12px);
+}
+.cart-bar:hover { box-shadow:0 8px 40px rgba(0,0,0,0.6), 0 0 80px rgba(200,117,26,0.22); }
+.cart-bar.visible { opacity:1; pointer-events:all; }
+.cart-count {
+  background:linear-gradient(135deg, var(--ember), var(--ember2));
+  color:white;
+  width:26px; height:26px; border-radius:var(--r-pill);
+  font-size:0.75rem; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 12px rgba(200,117,26,0.5); flex-shrink:0;
+}
+#cartLabel {
+  font-size:0.72rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--cream2);
+}
+.cart-arrow {
+  color:var(--gold); font-size:1rem; margin-left:4px;
+  transition:transform 0.2s;
+}
+.cart-bar:hover .cart-arrow { transform:translateX(3px); }
+
+/* ─── SLIP OVERLAY ──────────────────────────────────────────────── */
+#slipOverlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(10,7,3,0.88);
+  backdrop-filter:blur(10px);
+  z-index:300; overflow-y:auto;
+  padding:20px 14px 40px;
+}
+
+.slip-box {
+  max-width:440px; margin:0 auto;
+  background:linear-gradient(160deg, #221a0e 0%, var(--ink2) 100%);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(212,168,75,0.08);
+}
+
+.slip-header {
+  padding:30px 24px 22px;
+  text-align:center;
+  background:radial-gradient(ellipse at 50% 0%, rgba(200,117,26,0.12) 0%, transparent 65%);
+  border-bottom:1px solid var(--border);
+}
+.slip-logo {
+  font-family:'DM Serif Display', serif; font-style:italic;
+  font-size:2rem; letter-spacing:0.03em;
+  background:linear-gradient(135deg, var(--ember2), var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.slip-subtitle {
+  font-size:0.58rem; letter-spacing:0.32em;
+  color:var(--text-faint); text-transform:uppercase; margin-top:5px;
+}
+.slip-date {
+  margin-top:10px; font-size:0.68rem;
+  color:var(--text-dim); letter-spacing:0.05em;
+}
+
+.slip-banner {
+  margin:16px 20px 0;
+  background:rgba(200,117,26,0.08);
+  border:1px solid rgba(200,117,26,0.2);
+  border-radius:var(--r-md);
+  padding:11px 15px;
+  font-size:0.74rem; color:rgba(232,151,58,0.85);
+  display:flex; align-items:center; gap:10px;
+  letter-spacing:0.03em; line-height:1.5;
+}
+
+#slipItems { padding:8px 20px 8px; }
+
+.slip-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; gap:8px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.slip-item:last-child { border-bottom:none; }
+
+.slip-item-left {
+  display:flex; align-items:center; gap:10px;
+  flex:1; min-width:0;
+}
+.slip-qty {
+  background:linear-gradient(135deg, var(--ember), var(--ember2));
+  color:white; border-radius:var(--r-pill);
+  min-width:30px; height:22px; padding:0 7px;
+  font-size:0.68rem; font-weight:600;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.slip-name {
+  font-family:'Fraunces', serif; font-style:italic;
+  font-size:1rem; font-weight:300; color:var(--cream);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.slip-right {
+  display:flex; align-items:center; gap:6px; flex-shrink:0;
+}
+.slip-price {
+  font-family:'Fraunces', serif;
+  color:var(--gold); font-size:1rem;
+  margin-right:4px; letter-spacing:0.02em;
+}
+.ctrl-btn {
+  width:28px; height:28px;
+  border-radius:var(--r-pill);
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.04);
+  color:rgba(240,230,208,0.45);
+  font-size:0.85rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.18s; flex-shrink:0;
+}
+.ctrl-btn:active { transform:scale(0.88); }
+.ctrl-btn.minus:hover {
+  border-color:rgba(240,230,208,0.4); color:var(--text);
+  background:rgba(255,255,255,0.08);
+}
+.ctrl-btn.delete:hover {
+  border-color:rgba(220,90,90,0.5); color:rgba(220,90,90,0.9);
+  background:rgba(220,90,90,0.08);
+}
+
+.slip-divider {
+  height:1px; background:var(--border);
+  margin:0 20px;
+}
+
+.slip-total-row {
+  padding:18px 24px;
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.slip-total-label {
+  font-size:0.62rem; letter-spacing:0.28em;
+  text-transform:uppercase; color:var(--text-dim);
+}
+.slip-total-val {
+  font-family:'Fraunces', serif; font-style:italic;
+  font-size:2rem; font-weight:300;
+  color:var(--gold); letter-spacing:0.02em;
+  line-height:1;
+}
+
+.slip-btns { padding:0 20px 24px; display:flex; gap:10px; }
+.btn-clear {
+  flex:1; padding:13px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.03);
+  color:var(--text-dim);
+  font-family:'Outfit',sans-serif;
+  font-size:0.68rem; letter-spacing:0.12em;
+  text-transform:uppercase; cursor:pointer;
+  border-radius:var(--r-pill);
+  transition:all 0.2s;
+}
+.btn-clear:hover { border-color:rgba(255,255,255,0.3); color:var(--text); }
+.btn-back {
+  flex:2; padding:13px;
+  background:linear-gradient(135deg, var(--ember) 0%, var(--ember2) 100%);
+  border:none; color:white;
+  font-family:'Outfit',sans-serif;
+  font-size:0.68rem; font-weight:500; letter-spacing:0.12em;
+  text-transform:uppercase; cursor:pointer;
+  border-radius:var(--r-pill);
+  box-shadow:0 4px 20px rgba(200,117,26,0.35);
+  transition:all 0.2s;
+}
+.btn-back:hover { box-shadow:0 6px 28px rgba(200,117,26,0.55); transform:translateY(-1px); }
+
+/* empty */
+.slip-empty {
+  text-align:center; padding:32px 0;
+  font-family:'Fraunces',serif; font-style:italic;
+  font-size:1rem; color:var(--text-faint);
+}
+
+/* ─── RESPONSIVE ────────────────────────────────────────────────── */
+
+/* ── MOBILE FIRST base fixes ── */
+.hero {
+  padding-top: 70px; /* make room for lang buttons above logo */
+}
+.lang-switcher {
+  top: 14px; right: 12px; left: 12px;
+  justify-content: flex-end;
+}
+.hero-tagline {
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  padding: 0 48px; /* stop it wrapping into lang buttons */
+}
+.section {
+  padding: 22px 12px 130px;
+}
+.grid {
+  grid-template-columns: repeat(2, 1fr); /* exactly 2 columns on mobile */
+  gap: 10px;
+}
+.card img { height: 120px; }
+.card-name { font-size: 1rem; }
+.card-desc { font-size: 0.65rem; }
+.price { font-size: 1.05rem; }
+
+/* cart bar - keep it from overflowing narrow screens */
+.cart-bar {
+  left: 14px; right: 14px;
+  transform: none;
+  justify-content: center;
+  padding: 13px 20px;
+  border-radius: var(--r-pill);
+}
+.cart-bar.visible { opacity: 1; pointer-events: all; }
+
+/* slip - edge to edge on small screens */
+#slipOverlay { padding: 12px 8px 32px; }
+.slip-box { border-radius: var(--r-lg); }
+.slip-header { padding: 24px 18px 18px; }
+#slipItems { padding: 6px 14px; }
+.slip-divider { margin: 0 14px; }
+.slip-total-row { padding: 14px 18px; }
+.slip-btns { padding: 0 14px 20px; }
+.slip-banner { margin: 14px 14px 0; }
+
+/* tabs - make them smaller on tiny screens */
+.tab { padding: 13px 12px; font-size: 0.65rem; letter-spacing: 0.08em; }
+
+@media(min-width: 400px) {
+  .hero { padding-top: 64px; }
+  .hero-tagline { letter-spacing: 0.22em; }
+  .card img { height: 130px; }
+}
+
+@media(min-width: 540px) {
+  .hero { padding-top: 36px; }
+  .lang-switcher { left: auto; top: 18px; right: 18px; }
+  .hero-tagline { padding: 0; letter-spacing: 0.3em; font-size: 0.62rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(165px,1fr)); gap: 14px; }
+  .card img { height: 145px; }
+  .cart-bar { left: 50%; right: auto; transform: translateX(-50%); }
+  #slipOverlay { padding: 18px 12px 36px; }
+  .slip-box { border-radius: var(--r-xl); }
+  #slipItems { padding: 6px 18px; }
+  .slip-divider { margin: 0 18px; }
+  .slip-total-row { padding: 14px 20px; }
+  .slip-btns { padding: 0 18px 22px; }
+  .slip-banner { margin: 14px 18px 0; }
+}
+
+@media(min-width: 768px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(210px,1fr)); gap: 18px; }
+  .card img { height: 180px; }
+  .section { padding: 34px 28px 130px; }
+  .tab { padding: 15px 16px; font-size: 0.7rem; letter-spacing: 0.12em; }
+}
+
+@media(min-width: 1100px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(235px,1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- ─ LOADING ────────────────────────────────────────────────────── -->
+<div id="loadingScreen">
+  <div class="load-logo" id="loadLogoText">John's</div>
+  <div class="load-sub">Opening the menu…</div>
+  <div class="load-bar-wrap"><div class="load-bar"></div></div>
+</div>
+
+<!-- ─ HERO ───────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="lang-switcher">
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('ru')">RU</button>
+    <button class="lang-btn" onclick="setLang('uz')">UZ</button>
+  </div>
+  <div class="hero-eyebrow" id="heroEyebrow">Welcome</div>
+  <div class="hero-logo" id="heroLogo"></div>
+  <div class="hero-tagline" id="heroTagline"></div>
+  <div class="ornament">
+    <div class="ornament-line"></div>
+    <div class="ornament-dot"></div>
+    <div class="ornament-line right"></div>
+  </div>
+</div>
+
+<!-- ─ TABS ───────────────────────────────────────────────────────── -->
+<div class="tabs-wrap">
+  <div class="tabs" id="tabsContainer"></div>
+</div>
+
+<!-- ─ SECTIONS ───────────────────────────────────────────────────── -->
+<div id="sectionsContainer"></div>
+
+<!-- ─ CART BAR ───────────────────────────────────────────────────── -->
+<div class="cart-bar" id="cartBar" onclick="openSlip()">
+  <span class="cart-count" id="cartCount">0</span>
+  <span id="cartLabel"></span>
+  <span class="cart-arrow">→</span>
+</div>
+
+<!-- ─ ORDER SLIP ─────────────────────────────────────────────────── -->
+<div id="slipOverlay">
+  <div class="slip-box">
+
+    <div class="slip-header">
+      <div class="slip-logo" id="slipLogo"></div>
+      <div class="slip-subtitle" id="slipTitle"></div>
+      <div class="slip-date" id="slipDate"></div>
+    </div>
+
+    <div class="slip-banner">
+      <span style="font-size:1rem;flex-shrink:0">✦</span>
+      <span id="slipBanner"></span>
+    </div>
+
+    <div id="slipItems"></div>
+    <div class="slip-divider"></div>
+
+    <div class="slip-total-row">
+      <span class="slip-total-label" id="slipTotalLabel"></span>
+      <span class="slip-total-val" id="slipTotal">$0</span>
+    </div>
+
+    <div class="slip-btns">
+      <button class="btn-clear" onclick="clearOrder()">✕ &nbsp;<span id="btnClear"></span></button>
+      <button class="btn-back"  onclick="closeSlip()">← &nbsp;<span id="btnBack"></span></button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────── */
+let MENU  = null;
+let lang  = localStorage.getItem('jpLang') || 'en';
+let items = [];
+let total = 0;
+
+/* ── LOCALSTORAGE ──────────────────────────────────────────────── */
+function loadOrder() {
+  try {
+    const s = localStorage.getItem('jpOrder');
+    if (s) { const d = JSON.parse(s); items = d.items||[]; total = d.total||0; }
+  } catch(e) { items=[]; total=0; }
+}
+function saveOrder() {
+  localStorage.setItem('jpOrder', JSON.stringify({items, total}));
+}
+
+/* ── TRANSLATE ─────────────────────────────────────────────────── */
+function L(obj) {
+  if (!obj) return '';
+  return obj[lang] || obj['en'] || '';
+}
+
+/* ── RENDER ────────────────────────────────────────────────────── */
+function renderMenu() {
+  const r = MENU.restaurant;
+
+  const loadLogo = document.getElementById('loadLogoText');
+  if (loadLogo) loadLogo.textContent = r.name;
+  document.getElementById('heroLogo').textContent     = r.name;
+  document.getElementById('heroTagline').textContent  = r.tagline;
+  document.getElementById('slipLogo').textContent     = r.name;
+
+  // hero eyebrow per lang
+  const eyebrows = { en:'Welcome', ru:'Добро пожаловать', uz:'Xush kelibsiz' };
+  document.getElementById('heroEyebrow').textContent  = eyebrows[lang] || 'Welcome';
+
+  // Tabs
+  document.getElementById('tabsContainer').innerHTML = MENU.categories.map((cat,i) =>
+    `<button class="tab${i===0?' active':''}" onclick="switchTab('${cat.id}',this)">
+       ${cat.emoji}&thinsp;${L(cat.label)}
+     </button>`
+  ).join('');
+
+  // Sections
+  document.getElementById('sectionsContainer').innerHTML = MENU.categories.map((cat,i) => `
+    <div class="section${i===0?' active':''}" id="sec_${cat.id}">
+      <div class="section-header">
+        <div class="section-eyebrow">${cat.emoji}&ensp;${L(cat.label)}</div>
+        <div class="section-title">${L(cat.title)}</div>
+        <div class="section-sub">${L(cat.subtitle)}</div>
+      </div>
+      <div class="grid">${cat.items.map(renderCard).join('')}</div>
+    </div>
+  `).join('');
+
+  refreshUI();
+}
+
+function renderCard(item) {
+  const name = L(item.name);
+  const safe = name.replace(/'/g,"\\'");
+  const badge = item.badge ? `<div class="badge">${L(item.badge)}</div>` : '';
+  return `
+    <div class="card">
+      <div class="card-img-wrap">
+        ${badge}
+        <img src="${item.image}" alt="${name}" loading="lazy">
+        <div class="card-img-overlay"></div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${name}</div>
+        <div class="card-desc">${L(item.description)}</div>
+        <div class="card-footer">
+          <span class="price">${item.currency}${item.price}</span>
+          <button class="add-btn" onclick="addToCart(${item.price},'${safe}')">+</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ── UI STRINGS ────────────────────────────────────────────────── */
+function refreshUI() {
+  const ui = MENU.ui;
+  document.getElementById('slipTitle').textContent      = L(ui.slip_title);
+  document.getElementById('slipBanner').textContent     = L(ui.slip_banner);
+  document.getElementById('slipTotalLabel').textContent = L(ui.slip_total);
+  document.getElementById('btnClear').textContent       = L(ui.btn_clear);
+  document.getElementById('btnBack').textContent        = L(ui.btn_back);
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === lang.toUpperCase());
+  });
+  updateBar();
+}
+
+/* ── LANGUAGE ──────────────────────────────────────────────────── */
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('jpLang', l);
+  renderMenu();
+}
+
+/* ── TABS ──────────────────────────────────────────────────────── */
+function switchTab(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec_'+id).classList.add('active');
+  el.classList.add('active');
+  el.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+}
+
+/* ── CART ──────────────────────────────────────────────────────── */
+function addToCart(price, name) {
+  const ex = items.find(i => i.name === name);
+  if (ex) { ex.qty++; ex.price += price; }
+  else { items.push({name, price, unitPrice:price, qty:1}); }
+  total += price;
+  saveOrder(); updateBar();
+}
+
+function updateBar() {
+  const count = items.reduce((s,i) => s+i.qty, 0);
+  const cur   = MENU?.categories?.[0]?.items?.[0]?.currency || '$';
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartLabel').textContent =
+    L(MENU?.ui?.cart_label || {en:'My Order'}) + ' — ' + cur + total;
+  document.getElementById('cartBar').classList.toggle('visible', count > 0);
+}
+
+/* ── SLIP ──────────────────────────────────────────────────────── */
+function openSlip() {
+  const now    = new Date();
+  const locale = lang==='ru'?'ru-RU': lang==='uz'?'uz-UZ':'en-US';
+  document.getElementById('slipDate').textContent =
+    now.toLocaleDateString(locale,{weekday:'long',month:'long',day:'numeric'}) +
+    '  ·  ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  refreshUI();
+
+  const c = document.getElementById('slipItems');
+  const emptyMsg = L(MENU.ui.empty_msg);
+
+  c.innerHTML = items.length === 0
+    ? `<div class="slip-empty">${emptyMsg}</div>`
+    : items.map((item,idx) => `
+        <div class="slip-item">
+          <div class="slip-item-left">
+            <span class="slip-qty">${item.qty}×</span>
+            <span class="slip-name">${item.name}</span>
+          </div>
+          <div class="slip-right">
+            <span class="slip-price">$${item.price}</span>
+            <button class="ctrl-btn minus" onclick="decreaseItem(${idx})">−</button>
+            <button class="ctrl-btn delete" onclick="removeItem(${idx})">✕</button>
+          </div>
+        </div>`).join('');
+
+  document.getElementById('slipTotal').textContent = '$' + total;
+  document.getElementById('slipOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSlip() {
+  document.getElementById('slipOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function decreaseItem(idx) {
+  const item = items[idx];
+  total -= item.unitPrice;
+  if (total < 0) total = 0;
+  item.qty--;
+  item.price -= item.unitPrice;
+  if (item.qty <= 0) items.splice(idx, 1);
+  saveOrder(); updateBar(); openSlip();
+}
+
+function removeItem(idx) {
+  total -= items[idx].price;
+  if (total < 0) total = 0;
+  items.splice(idx, 1);
+  saveOrder(); updateBar(); openSlip();
+}
+
+function clearOrder() {
+  items = []; total = 0;
+  saveOrder(); updateBar(); openSlip();
+}
+
+/* ── INIT ──────────────────────────────────────────────────────── */
+async function init() {
+  loadOrder();
+  try {
+    const res = await fetch('menu.json');
+    if (!res.ok) throw new Error();
+    MENU = await res.json();
+    renderMenu();
+    setTimeout(() => {
+      document.getElementById('loadingScreen').classList.add('hidden');
+      setTimeout(() => document.getElementById('loadingScreen').remove(), 700);
+    }, 900);
+  } catch(e) {
+    document.getElementById('loadingScreen').innerHTML = `
+      <div style="text-align:center;padding:28px;max-width:300px">
+        <div style="font-size:2.5rem;margin-bottom:14px">⚠︎</div>
+        <div style="color:var(--cream);font-size:0.95rem;margin-bottom:8px;letter-spacing:0.04em">
+          Could not load menu.json
+        </div>
+        <div style="color:var(--text-dim);font-size:0.78rem;line-height:1.7">
+          Place <code style="color:var(--ember2)">menu.json</code> in the same folder as
+          <code style="color:var(--ember2)">index.html</code>
+        </div>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
