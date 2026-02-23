@@ -452,6 +452,11 @@ body::after {
   border-color:rgba(240,230,208,0.4); color:var(--text);
   background:rgba(255,255,255,0.08);
 }
+.ctrl-btn.plus { border-color:rgba(200,117,26,0.35); color:var(--ember2); }
+.ctrl-btn.plus:hover {
+  border-color:var(--ember); color:white;
+  background:rgba(200,117,26,0.18);
+}
 .ctrl-btn.delete:hover {
   border-color:rgba(220,90,90,0.5); color:rgba(220,90,90,0.9);
   background:rgba(220,90,90,0.08);
@@ -820,6 +825,7 @@ function openSlip() {
           <div class="slip-right">
             <span class="slip-price">$${item.price}</span>
             <button class="ctrl-btn minus" onclick="decreaseItem(${idx})">−</button>
+            <button class="ctrl-btn plus" onclick="increaseItem(${idx})">+</button>
             <button class="ctrl-btn delete" onclick="removeItem(${idx})">✕</button>
           </div>
         </div>`).join('');
@@ -841,6 +847,14 @@ function decreaseItem(idx) {
   item.qty--;
   item.price -= item.unitPrice;
   if (item.qty <= 0) items.splice(idx, 1);
+  saveOrder(); updateBar(); openSlip();
+}
+
+function increaseItem(idx) {
+  const item = items[idx];
+  item.qty++;
+  item.price += item.unitPrice;
+  total += item.unitPrice;
   saveOrder(); updateBar(); openSlip();
 }
 
